@@ -7,14 +7,16 @@ class UnitParser {
   has $.parser;
 
   grammar UnitParserGrammar {
-    regex TOP { <num> [ '/' <den> ]? }
+    regex TOP { <fac> \s* <num> [ '/' <den> ]? }
 
-    regex num { ( <expr> \s* )+ }
+    regex fac { <[+-]>? \d+ [ '.' \d+ ]? }
+
+    regex num { [ <expr> \s* ]+ }
 
     regex den { <expr> }
 
     regex expr {
-      <mag>? <unit> [ '^' (\d+) ]?
+      <mag>? <unit> [ '^' $<pow> = (\d+) ]?
     }
 
     token mag {
@@ -34,13 +36,11 @@ class UnitParser {
     $.parser.^compose;
   }
 
-  # method refresh {
-  #   @!defUnits = Units.enum.keys, %formulas.keys;
-  # }
-
   method parse($s) {
-    #self.refresh;
-    $.parser.parse($s);
+    my $m = $.parser.parse($s);
+    # cw: Flesh out and use an actual expression class.
+    die "Invalid units specified." unless $m.defined;
+    $m;
   }
 }
 
@@ -48,8 +48,14 @@ sub MAIN {
   my $up = UnitParser.new;
   $up.addUnit('ft');
   $up.addUnit('s');
+  $up.addUnit('N');
 
-  say $up.parse('ft/s');
-  say $up.parse('Mft/ks');
-  say $up.parse('ft/ks');
+  my $m;
+  say $up.parse('1 ft/s');
+  say $up.parse('1.5 Mft/ks');
+  say $up.parse('-3.14159 ft/ks');
+  say ($m = $up.parse('2 kN Mft^2/cs^2'));
+
+  say $m<num><expr>[1]<pow>;
+  say $m<den><expr><pow>;
 }

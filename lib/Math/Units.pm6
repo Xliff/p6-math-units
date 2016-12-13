@@ -36,14 +36,18 @@ class UnitParser {
   has $.parser;
 
   grammar UnitParserGrammar {
-    regex TOP { <num> [ '/' <den> ]? }
+    regex TOP { <fac> \s* <units> }
 
-    regex num { ( <expr> \s* )+ }
+    regex fac { <[+-]>? \d+ [ '.' \d+ ]? }
+
+    regex units { <num> [ '/' <den> ]? }
+
+    regex num { [ <expr> \s* ]+ }
 
     regex den { <expr> }
 
     regex expr {
-      <mag>? <unit> [ '^' (\d+) ]?
+      <mag>? <unit> [ '^' $<pow> = (\d+) ]?
     }
 
     token mag {
@@ -51,7 +55,6 @@ class UnitParser {
     }
 
     proto token unit { * }
-
   }
 
   submethod BUILD {
@@ -65,7 +68,39 @@ class UnitParser {
   }
 
   method parse($s) {
-    $.parser.parse($s);
+    my @unitParts;
+    my $m = $.parser.parse($s);
+    my ($mag, @unitParts) = self!handleUnitData($m<units>);
+
+    Math::Units.new(
+      :fac($m<fac>.Num),
+      :$mag,
+      :units($m<units>.Str),
+      :@unitParts
+    );
+  }
+
+  method parseUnits(Str $u) {
+    my $m = $.parser.subparse($u, :rule('units'));
+    die "Could not parse units" unless $m;
+    self!handleUnitData($m)
+  }
+
+  method !handleUnitData(Match $m) {
+    my $mag;
+
+    for $m<units><num><expr> -> $ne {
+      push @unitParts: [ $_<unit>, $_<pow> ];
+      $mag *= Magnitude($ne<mag>).Int if $ne<mag>.defined;
+    }
+    push @unitParts: [
+      $m<units><den><expr><unit>,
+      $m<units><den><expr><pow>.Num * -1
+    ];
+    $mag /= Magnitude($m<units><den><expr><mag>).Int
+      if $<units><den><expr><mag>.defined;
+
+    $mag, @unitParts;
   }
 }
 
@@ -101,7 +136,8 @@ class Math::Units {
   submethod BUILD(
     :$fac = 1,
     :$mag = 1,
-    :$units
+    :$units,
+    :@unitParts
   ) {
       $!fac   = $fac;
       $!mag   = $mag;
@@ -109,10 +145,16 @@ class Math::Units {
 
       $!value =  $.fac * $.mag;
 
-      @.unitParts = self!parseUnits;
+      @.unitParts = @unitParts;
   }
 
-  method !parseUnits {
-
+  method new($e) {
+    self!parseExpression($e);
   }
+
+  method new(:$fac, :$mag, :$units) {
+    self.bless(:$fac, :$mag, :$units)
+  }
+
+
 }
