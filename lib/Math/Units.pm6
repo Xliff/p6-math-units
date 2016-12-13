@@ -12,10 +12,24 @@ use Math::Units::Defs;
 #     first. This means that we need a method to load the initial tables
 #     before checking happens.
 my $check_defs = 0;
+my $up;
+my %unitTable;
+
 #     Any instantiation of a Math::Units object
 #     after module initialization will have checking *forced*.
 #     So we then set $check_defs to a non-zero value when that is done.
 initialize();
+
+class Math::Units { ... }
+
+# Cd ............. Celsius degrees (temperature change)
+constant s   is export = Math::Units.new( :units<s>   );
+constant m   is export = Math::Units.new( :units<m>   );
+constant g   is export = Math::Units.new( :units<g>   );
+constant deg is export = Math::Units.new( :units<deg> );
+constant A   is export = Math::Units.new( :units<A>   );
+constant C   is export = Math::Units.new( :units<C>   );
+constant Cd  is export = Math::Units.new( :units<Cd>  );
 
 class UnitParser {
   has @.defUnits;
@@ -45,6 +59,7 @@ class UnitParser {
   }
 
   method addUnit(Str $unit) {
+    @.defUnits.push: $unit;
     $.parser.^add_multi_method("unit:sym<$unit>", my token { $unit });
     $.parser.^compose;
   }
@@ -54,17 +69,50 @@ class UnitParser {
   }
 }
 
-class Math::Units {
-  has %.units;
-
-}
-
 my sub initialize {
-  my $up = UnitParser.new;
-  for Units.enum.keys, %reductions.keys -> $k {
+  $up = UnitParser.new;
+
+  # Add formula definitions to unit table
+  for %formulas.kv,  -> $k, $v {
     $up.addUnit: $k;
+    %unitTable{$k.Str} = Math::Units.new($v);
   }
+
+  # Add reductions to the unit table
+  for %reductions,kv -> $k, $v {
+      $up.addUnit: $k;
+      %unitTable{$k} = Math::Units.new($v);
+  }
+
+  # Check units table for validity.
 
   # Lastly!
   $check_defs = 1;
+}
+
+class Math::Units {
+  has %.units;
+  has $.fac;
+  has $.mag;
+  has $.value;
+  has $.units;
+  has @.unitParts;
+
+  submethod BUILD(
+    :$fac = 1,
+    :$mag = 1,
+    :$units
+  ) {
+      $!fac   = $fac;
+      $!mag   = $mag;
+      $!units = $units;
+
+      $!value =  $.fac * $.mag;
+
+      @.unitParts = self!parseUnits;
+  }
+
+  method !parseUnits {
+
+  }
 }

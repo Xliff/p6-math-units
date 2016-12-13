@@ -38,6 +38,9 @@ class Math::Units { ... }
 #     of kilograms (kg). Kiograms are supported, but they will always be
 #     represented as 1000 g, internally. This prevents possible conflicts
 #     with the unit parser.
+#
+# cw: XXX - Convert these to has values, since we can't use Math::Units
+#           here. It will never exist, even with the predeclaration.
 my %formulas is export = (
   are   => Math::Units.new(:mag(h),    :units<m/s>),
   l     => Math::Units.new(:mag(m),    :units<m^3>),
