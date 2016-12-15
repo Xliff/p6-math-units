@@ -219,30 +219,54 @@ multi sub infix:<*>(Num $lhs, Math::Units $rhs) {
   Math::Units.new(
     :fac($rhs.value * $lhs),
     :units($rhs.units),
-    :unitParts(@rhs.unitParts)
+    :unitParts($rhs.unitParts)
   )
+}
+
+multi sub infix:<*>(Math::Units $lhs, Num $rhs) {
+  $rhs * $lhs;
 }
 
 multi sub infix:<*>(Int $lhs, Math::Units $rhs) {
   Math::Units.new(
-    :fac($rhs.value * $lhs),
-    :units($rhs.units),
-    :unitParts(@rhs.unitParts)
+    :fac($lhs * $rhs.value),
+    :units($lhs.units),
+    :unitParts($lhs.unitParts)
   )
+}
+
+multi sub infix:<*>(Math::Units $lhs, Int $rhs) {
+  $rhs * $lhs;
 }
 
 multi sub infix:</>(Num $lhs, Math::Units $rhs) {
   Math::Units.new(
-    :fac($rhs.value * $lhs),
+    :fac($lhs / $rhs.value),
     :units($rhs.units),
-    :unitParts(@rhs.unitParts)
+    :unitParts($rhs.unitParts)
+  )
+}
+
+multi sub infix:</>(Math::Units $lhs, Num $rhs) {
+  Math::Units.new(
+    :fac($lhs.value / $rhs),
+    :units($lhs.units),
+    :unitParts($lhs.unitParts)
   )
 }
 
 multi sub infix:</>(Int $lhs, Math::Units $rhs) {
   Math::Units.new(
-    :fac($rhs.value * $lhs),
+    :fac($lhs / $rhs.value),
     :units($rhs.units),
-    :unitParts(@rhs.unitParts)
+    :unitParts($rhs.unitParts)
+  )
+}
+
+multi sub infix:</>(Math::Units $lhs, Int $rhs) {
+  Math::Units.new(
+    :fac($lhs.value / $rhs),
+    :units($lhs.units),
+    :unitParts($lhs.unitParts)
   )
 }
