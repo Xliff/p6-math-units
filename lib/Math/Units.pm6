@@ -32,8 +32,23 @@ constant A   is export = Math::Units.new( :units<A>   );
 constant C   is export = Math::Units.new( :units<C>   );
 constant Cd  is export = Math::Units.new( :units<Cd>  );
 
+# Quick access unit table. Contains all defined units for quick conversion
+# from literal to Math::Units objects.
+#
+# Ex: 1 * %U<m/s> == Math::Units.new('1 m/s') == Math::Units.new(:units<m/s>)
+our %U is export := {};
+
 my sub initialize {
   $up = Math::Units::Parser.new;
+
+  # Consistency is good.
+  %U{'s'}   := s;
+  %U{'m'}   := m;
+  %U{'g'}   := g;
+  %U{'deg'} := deg;
+  %U{'A'}   := A;
+  %U{'C'}   := C;
+  %U{'Cd'}  := Cd;
 
   # Add formula definitions to unit table
   for %formulas.kv,  -> $k, $v {
@@ -42,17 +57,21 @@ my sub initialize {
   }
 
   # Add reductions to the unit table
-  for %reductions,kv -> $k, $v {
+  for %reductions.kv -> $k, $v {
       $up.addUnit: $k;
       %unitTable{$k} = Math::Units.new($v);
   }
 
   # Check units table for validity.
   for %unitTable.kv -> $k, $v {
-    for $v.unitParts -> $p {
-      die "Cannot find a definition for '{$p.unit}' in '{$k}'";
-    }
+      .isValid(:fatal(True)) for $v.unitParts;
+      die "Unit '{ $k }' was already defined during initialization!"
+        if %U{$k}.defined;
+      # Establish entry into quick access table if necessary.
+      %U{$v.units} = Math::Units.new(:units($v.units));
   }
+
+
 
   # Lastly!
   $check_defs = 1;
@@ -78,9 +97,24 @@ class Math::Units {
       $!value =  $.fac * $.mag;
 
       @.unitParts = @unitParts;
+
+      self.isValid(:fatal($check_defs));
   }
 
-  proto method new (|) {*}
+  method addUnit(Math::Units:U Str $u, *%def) {
+    my ($mag, $parts) = $up.parseUnits($def<units>);
+
+    die "Unit '$u' already exists" if %unitTable{$u}.defined;
+
+    for $parts -> $p {
+      die "Unknown unit '$p' in '$def<units>'"
+        unless %unitTable{$p}.defined;
+    }
+    %unitTable{$u} = Math::Units.new(|%def);
+    %U{$u} = Math::Units.new(:unit($u));
+  }
+
+  #proto method new (|) {*}
 
   multi method new($e) {
     $up.parse($s);
@@ -89,6 +123,33 @@ class Math::Units {
   multi method new(:$fac, :$mag, :$units) {
     my ($umag, @unitParts) = $up.parseUnits($units);
     self.bless(:$fac, :mag($mag * $umag), :$units, :@unitParts);
+  }
+
+  method reduce {
+    # Reduce unitParts to its most simple form.
+    my @units = @.unitParts.clone.map({ $_[1] }).unique;
+    my @newUnitParts;
+    for @units -> $u {
+      my @su = @.unitParts.grep({ $_[1] eq $u }).map({ $_[1] });
+      my $s = @su.elems == 1 ?? @su[0][0] !! @su.sum;
+      @newUnitParts.push: ($s, $u) if $s;
+    }
+    @!unitParts = @newUnitParts;
+    $!units = self!partsToString;
+  }
+
+  method isValid(:$fatal = False) {
+    for @.unitParts -> $p {
+      my $msg = "Cannot find a definition for '{$p[1]}' in '{$.units}'";
+      if $fatal {
+        die $msg unless %unitTable{$p[1]}.defined;
+      }
+      else {
+        say $msg;
+        return False;
+      }
+    }
+    True;
   }
 
   method !partsToString {
@@ -101,9 +162,12 @@ class Math::Units {
     $den = @.unitParts
       .grep({ $_[0] < 0})
       .sort
-      .map({ $_[1] ~ $[0] < -1 ?? "^{ $_[0].Num.abs }" !! ''});
+      .map({ $_[1] ~ $[0] < -1 ?? "^{ $_[0].Num.abs }" !! ''})
+      .join(' ');
 
-    "{ $num }/{ $den }";
+    my $ret = $num;
+    $ret ~ "/{ $den }" if $den.chars;
+    $ret;
   }
 
   method setUnits(Str $us) {
@@ -115,18 +179,37 @@ class Math::Units {
       die "Invalid unit '$up' in '$us'" unless %unitTable{$up}.defined;
       @.unitParts.push: $up;
     }
-    $!units = self!partstoString;
+    $!units = self!partsToString;
   }
 
   method setUnits(@up) {
     # Check that given unit parts are valid.
+    for @up -> $u {
+      die "Invalid unit part '$u[1]'" unless %U{$u[1]}.defined;
+    }
+    @!unitParts = @up;
     # Update $.units
+    $!units = self!partsToString;
   }
 
 }
 
 multi sub infix:<+>(Math::Units $lhs, Math::Units $rhs) {
   # If units are equivalent, add values
+  $lhs.reduce;
+  $rhs.reduce;
+  die "Attempt to perform a sum using different units: { $lhs.units } vs { $rhs.units }"
+    unless $lhs.units eq $rhs.units;
+  Math::Units.new(:value($lhs.value - $rhs.value), :units($lhs.units));
+}
+
+multi sub infix:<->(Math::Units $lhs, Math::Units $rhs) {
+  # If units are equivalent, subtract values
+  $lhs.reduce;
+  $rhs.reduce;
+  die "Attempt to subtract using different units: { $lhs.units } vs { $rhs.units }"
+    unless $lhs.units eq $rhs.units;
+  Math::Units.new(:value($lhs.value - $rhs.value), :units($lhs.units));
 }
 
 
