@@ -91,4 +91,75 @@ class Math::Units {
     self.bless(:$fac, :mag($mag * $umag), :$units, :@unitParts);
   }
 
+  method !partsToString {
+    $num = @.unitParts
+      .grep({ $_[0] > 0 })
+      .sort
+      .map({ $_[1] ~ $[0] > 1 ?? "^{ $_[0] }" !! ''})
+      .join(' ');
+
+    $den = @.unitParts
+      .grep({ $_[0] < 0})
+      .sort
+      .map({ $_[1] ~ $[0] < -1 ?? "^{ $_[0].Num.abs }" !! ''});
+
+    "{ $num }/{ $den }";
+  }
+
+  method setUnits(Str $us) {
+    my ($mag, $parts) = $up.parseUnits($us);
+
+    # Check that given units are valid.
+    @!unitParts = ();
+    for $parts -> $up {
+      die "Invalid unit '$up' in '$us'" unless %unitTable{$up}.defined;
+      @.unitParts.push: $up;
+    }
+    $!units = self!partstoString;
+  }
+
+  method setUnits(@up) {
+    # Check that given unit parts are valid.
+    # Update $.units
+  }
+
+}
+
+multi sub infix:<+>(Math::Units $lhs, Math::Units $rhs) {
+  # If units are equivalent, add values
+}
+
+
+# Multiplication and division between Numeric values and a Math::Unit is fairly
+# straight foward.
+multi sub infix:<*>(Num $lhs, Math::Units $rhs) {
+  Math::Units.new(
+    :fac($rhs.value * $lhs),
+    :units($rhs.units),
+    :unitParts(@rhs.unitParts)
+  )
+}
+
+multi sub infix:<*>(Int $lhs, Math::Units $rhs) {
+  Math::Units.new(
+    :fac($rhs.value * $lhs),
+    :units($rhs.units),
+    :unitParts(@rhs.unitParts)
+  )
+}
+
+multi sub infix:</>(Num $lhs, Math::Units $rhs) {
+  Math::Units.new(
+    :fac($rhs.value * $lhs),
+    :units($rhs.units),
+    :unitParts(@rhs.unitParts)
+  )
+}
+
+multi sub infix:</>(Int $lhs, Math::Units $rhs) {
+  Math::Units.new(
+    :fac($rhs.value * $lhs),
+    :units($rhs.units),
+    :unitParts(@rhs.unitParts)
+  )
 }
