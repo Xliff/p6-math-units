@@ -1,6 +1,7 @@
 use v6.c;
 
 use Math::Units::Defs;
+use Math::Units::Parser;
 
 # cw: The idea of specifying everything using the (yet-to-be-defined) class
 #     is so that the class can build up a state table of unit-to-unit or
@@ -31,81 +32,8 @@ constant A   is export = Math::Units.new( :units<A>   );
 constant C   is export = Math::Units.new( :units<C>   );
 constant Cd  is export = Math::Units.new( :units<Cd>  );
 
-class UnitParser {
-  has @.defUnits;
-  has $.parser;
-
-  grammar UnitParserGrammar {
-    regex TOP { <fac> \s* <units> }
-
-    regex fac { <[+-]>? \d+ [ '.' \d+ ]? }
-
-    regex units { <num> [ '/' <den> ]? }
-
-    regex num { [ <expr> \s* ]+ }
-
-    regex den { <expr> }
-
-    regex expr {
-      <mag>? <unit> [ '^' $<pow> = (\d+) ]?
-    }
-
-    token mag {
-      T || G || M || k || h || da || d || c || m || u || µ || n || dn || p || f
-    }
-
-    proto token unit { * }
-  }
-
-  submethod BUILD {
-    $!parser = UnitParserGrammar.new;
-  }
-
-  method addUnit(Str $unit) {
-    @.defUnits.push: $unit;
-    $.parser.^add_multi_method("unit:sym<$unit>", my token { $unit });
-    $.parser.^compose;
-  }
-
-  method parse($s) {
-    my @unitParts;
-    my $m = $.parser.parse($s);
-    my ($mag, @unitParts) = self!handleUnitData($m<units>);
-
-    Math::Units.new(
-      :fac($m<fac>.Num),
-      :$mag,
-      :units($m<units>.Str),
-      :@unitParts
-    );
-  }
-
-  method parseUnits(Str $u) {
-    my $m = $.parser.subparse($u, :rule('units'));
-    die "Could not parse units" unless $m;
-    self!handleUnitData($m)
-  }
-
-  method !handleUnitData(Match $m) {
-    my $mag;
-
-    for $m<units><num><expr> -> $ne {
-      push @unitParts: [ $_<unit>, $_<pow> ];
-      $mag *= Magnitude($ne<mag>).Int if $ne<mag>.defined;
-    }
-    push @unitParts: [
-      $m<units><den><expr><unit>,
-      $m<units><den><expr><pow>.Num * -1
-    ];
-    $mag /= Magnitude($m<units><den><expr><mag>).Int
-      if $<units><den><expr><mag>.defined;
-
-    $mag, @unitParts;
-  }
-}
-
 my sub initialize {
-  $up = UnitParser.new;
+  $up = Math::Units::Parser.new;
 
   # Add formula definitions to unit table
   for %formulas.kv,  -> $k, $v {
@@ -120,6 +48,11 @@ my sub initialize {
   }
 
   # Check units table for validity.
+  for %unitTable.kv -> $k, $v {
+    for $v.unitParts -> $p {
+      die "Cannot find a definition for '{$p.unit}' in '{$k}'";
+    }
+  }
 
   # Lastly!
   $check_defs = 1;
@@ -142,18 +75,28 @@ class Math::Units {
       $!fac   = $fac;
       $!mag   = $mag;
       $!units = $units;
-
       $!value =  $.fac * $.mag;
 
       @.unitParts = @unitParts;
   }
 
-  method new($e) {
-    self!parseExpression($e);
+  proto method new (|) {*}
+
+  multi method new($e) {
+    $up.parse($s);
   }
 
-  method new(:$fac, :$mag, :$units) {
-    self.bless(:$fac, :$mag, :$units)
+  multi method new(:$fac, :$mag, :$units) {
+    my ($umag, @unitParts) = $up.parseUnits($units);
+    self.bless(:$fac, :mag($mag * $umag), :$units, :@unitParts);
+  }
+
+  multi method new(:$fac, :$mag, :$units, :@unitParts) {
+    die "Use of the <unitParts> initializer is not allowed.";
+  }
+
+  multi method new(:$fac, :$mag, :$units, :@unitParts) {
+    die "Use of the <unitParts> initializer is not allowed.";
   }
 
 
