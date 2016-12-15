@@ -91,13 +91,4 @@ class Math::Units {
     self.bless(:$fac, :mag($mag * $umag), :$units, :@unitParts);
   }
 
-  multi method new(:$fac, :$mag, :$units, :@unitParts) {
-    die "Use of the <unitParts> initializer is not allowed.";
-  }
-
-  multi method new(:$fac, :$mag, :$units, :@unitParts) {
-    die "Use of the <unitParts> initializer is not allowed.";
-  }
-
-
 }
