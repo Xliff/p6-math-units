@@ -71,8 +71,6 @@ my sub initialize {
       %U{$v.units} = Math::Units.new(:units($v.units));
   }
 
-
-
   # Lastly!
   $check_defs = 1;
 }
@@ -91,14 +89,18 @@ class Math::Units {
     :$units,
     :@unitParts
   ) {
-      $!fac   = $fac;
-      $!mag   = $mag;
+      self.setValue($fac * $mag);
       $!units = $units;
-      $!value =  $.fac * $.mag;
 
       @.unitParts = @unitParts;
 
       self.isValid(:fatal($check_defs));
+  }
+
+  method setValue(Num $val) {
+    $!value = $val;
+    $!mag = 10 ** $val.log10.floor;
+    $!fac = $value / $!mag;
   }
 
   method addUnit(Math::Units:U Str $u, *%def) {
