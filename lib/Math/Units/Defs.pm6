@@ -3,21 +3,21 @@ use v6.c;
 unit module Math::Unit::Defs;
 
 enum Magnitude is export (
-  'T'  => 1e12,
-  'G'  => 1e9,
-  'M'  => 1e6,
-  'k'  => 1000,
-  'h'  => 100,
-  'da' => 10,
-  'd'  => .1,
-  'c'  => .01,
-  'm'  => .001,
-  'u'  => 1e-6,
-  'µ'  => 1e-6,
-  'n'  => 1e-9,
-  'dn' => 1e-10,
-  'p'  => 1e-12,
-  'f'  => 1e-15,
+  T  => 1e12,
+  G  => 1e9,
+  M  => 1e6,
+  k  => 1e3,
+  h  => 1e2,
+  da => 1e1,
+  d  => 1e-1,
+  c  => 1e-2,
+  m  => 1e-3,
+  u  => 1e-6,
+  µ  => 1e-6,
+  n  => 1e-9,
+  dn => 1e-10,
+  p  => 1e-12,
+  f  => 1e-15
 );
 
 # enum Units is export <
@@ -38,12 +38,12 @@ enum Magnitude is export (
 #     with the unit parser.
 #
 our @formulas is export = (
-  are   => { :mag<h>,       :units<m/s> },
-  l     => { :mag<m>,       :units<m^3> },
-  tonne => { :mag<100000>,  :units<g> },
+  are   => { :mag(h),       :units<m/s> },
+  l     => { :mag(m),       :units<m^3> },
+  tonne => { :mag(k * k),   :units<g> },
   bar   => { :mag(1e-5),    :units<Pa> },
-  mil   => { :mag<m>,       :units<in> },
-  N     => { :mag<k>,       :units<g m/s^2> },
+  mil   => { :mag(m),       :units<in> },
+  N     => { :mag(k),       :units<g m/s^2> },
 
   dyn      => { :units<cm g/s^2> },
   Pa       => { :units<N/m^2> },

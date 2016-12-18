@@ -170,7 +170,7 @@ class Math::Units::Parser {
   }
 
   method !handleUnitData(Match $m) {
-    my $mag;
+    my $mag = 1;
     my $unitParts = [];
 
     for $m<num><expr> -> $ne {
@@ -178,15 +178,17 @@ class Math::Units::Parser {
       $unitParts.push: [ $ne<unit>.Str, $pow; ];
       $mag *= Magnitude($ne<mag>.Str).Int if $ne<mag>.defined;
     }
-    $unitParts.push: [
-      $m<den><expr><unit>.Str,
-      ($m<den><expr><pow>.defined ?? $m<den><expr><pow>.Str.Int !! 1) * -1
-    ];
+    if $m<den>.defined {
+      $unitParts.push: [
+        $m<den><expr><unit>.Str,
+        ($m<den><expr><pow>.defined ?? $m<den><expr><pow>.Str.Int !! 1) * -1
+      ];
+      $mag /= Magnitude($m<den><expr><mag>).Int
+        if $<den><expr><mag>.defined;
+    }
 
+    put "Final UP: ";
     dd $unitParts;
-
-    $mag /= Magnitude($m<den><expr><mag>).Int
-      if $<den><expr><mag>.defined;
 
     $mag, $unitParts;
   }

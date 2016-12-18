@@ -31,7 +31,7 @@ INIT { initialize(); }
 # from literal to Math::Units objects.
 #
 # Ex: 1 * %U<m/s> == Math::Units.new('1 m/s') == Math::Units.new(:units<m/s>)
-our %U is export := {};
+our %U is export;
 
 my %factors;
 
@@ -48,12 +48,14 @@ class Math::Units {
     :$units,
     :@unitParts
   ) {
-      self.setValue($fac * $mag);
+      say "Math::Units::BUILD start\n";
+      self.setValue($fac.Num * $mag.Num);
       $!units = $units;
 
-      @!unitParts = @unitParts;
+      @!unitParts = |@unitParts;
 
-      self.isValid(:fatal($check_defs));
+      self.isValid if $check_defs;
+      say "Math::Units::BUILD end\n";;
   }
 
   method setValue(Num $val) {
@@ -82,15 +84,17 @@ class Math::Units {
     $up.parse($e);
   }
 
-  multi method new(:$fac, :$mag, :$units) {
+  multi method new(:$fac = 1, :$mag = 1, :$units) {
     dd $fac;
     dd $mag;
     dd $units;
 
-    my ($umag, @unitParts) = $up.parseUnits($units);
+    my ($umag, $unitParts) = $up.parseUnits($units);
+    my @unitParts = @( $unitParts );
+
     my $nmag = do given $mag {
       when Str {
-        Magnitude($mag);
+        Magnitude.enums{$mag};
       }
 
       when Int | Num {
@@ -102,11 +106,11 @@ class Math::Units {
 
   method reduce {
     # Reduce unitParts to its most simple form.
-    my @units = @.unitParts.clone.map({ $_[1] }).unique;
+    my @units = @.unitParts.clone.map({ $_[0] }).unique;
     my @newUnitParts;
     for @units -> $u {
-      my @su = @.unitParts.grep({ $_[1] eq $u }).map({ $_[1] });
-      my $s = @su.elems == 1 ?? @su[0][0] !! @su.sum;
+      my @su = @.unitParts.grep({ $_[0] eq $u }).map({ $_[1] });
+      my $s = @su.elems == 1 ?? @su[0][1] !! @su.sum;
       @newUnitParts.push: ($s, $u) if $s;
     }
     @!unitParts = @newUnitParts;
@@ -114,10 +118,11 @@ class Math::Units {
   }
 
   method isValid(:$fatal = False) {
+    dd @.unitParts;
     for @.unitParts -> $p {
-      my $msg = "Cannot find a definition for '{$p[1]}' in '{$.units}'";
+      my $msg = "Can't find a definition for '{$p[0]}' in '{$.units}'";
       if $fatal {
-        die $msg unless %unitTable{$p[1]}.defined;
+        die $msg unless %unitTable{$p[0]}.defined;
       }
       else {
         say $msg;
@@ -129,15 +134,15 @@ class Math::Units {
 
   method !partsToString {
     my $num = @.unitParts
-      .grep({ $_[0] > 0 })
+      .grep({ $_[1] > 0 })
       .sort
-      .map({ $_[1] ~ $[0] > 1 ?? "^{ $_[0] }" !! ''})
+      .map({ $_[0] ~ $[1] > 1 ?? "^{ $_[1] }" !! ''})
       .join(' ');
 
     my $den = @.unitParts
-      .grep({ $_[0] < 0})
+      .grep({ $_[1] < 0})
       .sort
-      .map({ $_[1] ~ $[0] < -1 ?? "^{ $_[0].Num.abs }" !! ''})
+      .map({ $_[0] ~ $[1] < -1 ?? "^{ $_[1].Num.abs }" !! ''})
       .join(' ');
 
     my $ret = $num;
@@ -160,7 +165,7 @@ class Math::Units {
   multi method setUnits(@up) {
     # Check that given unit parts are valid.
     for @up -> $u {
-      die "Invalid unit part '$u[1]'" unless %U{$u[1]}.defined;
+      die "Invalid unit part '$u[0]'" unless %U{$u[0]}.defined;
     }
     @!unitParts = @up;
     # Update $.units
@@ -170,7 +175,7 @@ class Math::Units {
   method pow(Num $pow) {
     self.setValue($.value.pow($pow));
     for @.unitParts -> $p {
-      $p[0] *= $pow;
+      $p[1] *= $pow;
     }
     $!units = self!partsToString;
   }
@@ -267,7 +272,13 @@ sub initialize {
   say "In init!";
   $up = Math::Units::Parser.new;
 
-  dd @formulas;
+  %U<s>   = Math::Units.new( :units<s>   );
+  %U<m>   = Math::Units.new( :units<m>   );
+  %U<g>   = Math::Units.new( :units<g>   );
+  %U<deg> = Math::Units.new( :units<deg> );
+  %U<A>   = Math::Units.new( :units<A>   );
+  %U<C>   = Math::Units.new( :units<C>   );
+  %U<Cd>  = Math::Units.new( :units<Cd>  );
 
   # Add formula definitions to unit table
   for @formulas -> $fp {
@@ -297,14 +308,6 @@ sub initialize {
       %U{$k} = Math::Units.new(:units($k));
   }
   say "Validity";
-
-  %U{'s'}   := Math::Units.new( :units<s>   );
-  %U{'m'}   := Math::Units.new( :units<m>   );
-  %U{'g'}   := Math::Units.new( :units<g>   );
-  %U{'deg'} := Math::Units.new( :units<deg> );
-  %U{'A'}   := Math::Units.new( :units<A>   );
-  %U{'C'}   := Math::Units.new( :units<C>   );
-  %U{'Cd'}  := Math::Units.new( :units<Cd>  );
 
   # Lastly!
   $check_defs = 1;
