@@ -135,7 +135,16 @@ class Math::Units {
 
   multi method new(:$fac, :$mag, :$units) {
     my ($umag, @unitParts) = $up.parseUnits($units);
-    self.bless(:$fac, :mag($mag * $umag), :$units, :@unitParts);
+    my $nmag = do given $mag {
+      when Str {
+        Magnitude($mag);
+      }
+
+      when Int | Num {
+        $mag;
+      }
+    }
+    self.bless(:$fac, :mag($nmag * $umag), :$units, :@unitParts);
   }
 
   method reduce {

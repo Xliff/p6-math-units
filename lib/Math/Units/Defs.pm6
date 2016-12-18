@@ -37,13 +37,13 @@ enum Units is export <
 #     represented as 1000 g, internally. This prevents possible conflicts
 #     with the unit parser.
 #
-my %formulas is export = (
-  are   => { :mag(h),    :units<m/s> },
-  l     => { :mag(m),    :units<m^3> },
-  tonne => { :mag(k*k),  :units<g> },
-  bar   => { :mag(1e-5), :units<Pa> },
-  mil   => { :mag<m>,    :units<in> },
-  N     => { :mag<k>,    :units<g m/s^2> },
+our %formulas is export = (
+  are   => { :mag<h>,       :units<m/s> },
+  l     => { :mag<m>,       :units<m^3> },
+  tonne => { :mag<100000>,  :units<g> },
+  bar   => { :mag(1e-5),    :units<Pa> },
+  mil   => { :mag<m>,       :units<in> },
+  N     => { :mag<k>,       :units<g m/s^2> },
 
   dyn      => { :units<cm g/s^2> },
   Pa       => { :units<N/m^2> },
@@ -95,7 +95,7 @@ my %formulas is export = (
 # A .............. ampere (current)
 # C .............. degrees Celsius (temperature)
 
-my %reductions is export = (
+our %reductions is export = (
   'in'  => { :fac(0.0254), :units<m> },       # inches
   'pnt' => { :fac(1/72),   :units<in> },      # PostScript points
   'ft'  => { :fac(12),     :units<in> },      # feet
@@ -110,8 +110,8 @@ my %reductions is export = (
   'gill'   => { :fac(1/4),  :units<pt> },     # gills
   'floz'   => { :fac(1/16), :units<pt> },     # fluid ounces
 
-  'Fd'     => { :fac(1.8),  :units<Cd>),     # Farenheit degrees (change }
-  'Kd'     => { :fac(1),    :units<Cd>),     # Kelvins (change }
+  'Fd'     => { :fac(1.8),  :units<Cd> },     # Farenheit degrees (change }
+  'Kd'     => { :fac(1),    :units<Cd> },     # Kelvins (change }
 
   'min'   => { :fac(60), :units<s> },         # minutes
   'hr'    => { :fac(60), :units<min> },       # hours
