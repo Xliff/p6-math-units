@@ -68,7 +68,7 @@ our @formulas is export = (
   farad    => { :units<coulomb/V> },
   Wb       => { :units("V s") },
   henry    => { :units<Wb/A> },
-  tesla    => { :units<Wb/m^s> },
+  tesla    => { :units<Wb/m^2> },
   Hz       => { :units<cycle/s> },
 
   slug     => { :units("lbf s^2/ft") },
