@@ -130,7 +130,7 @@ class Math::Units::Parser {
       ','?
     }
 
-    proto token unit { * }
+    proto regex unit { * }
   }
 
 

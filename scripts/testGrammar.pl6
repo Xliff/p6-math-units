@@ -55,7 +55,4 @@ sub MAIN {
   say $up.parse('1.5 Mft/ks');
   say $up.parse('-3.14159 ft/ks');
   say ($m = $up.parse('2 kN Mft^2/cs^2'));
-
-  say $m<num><expr>[1]<pow>;
-  say $m<den><expr><pow>;
 }

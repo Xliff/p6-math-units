@@ -138,5 +138,5 @@ our @reductions is export = (
   'troyounce'   => { :fac(1/12), :units<troypound> },  # troy ounce
   'pennyweight' => { :fac(1/20), :units<troyounce> },  # penny weight
 
-  'carat' => { :fac(0.2), :units<gm> },                # carat
+  'carat' => { :fac(0.2), :units<g> },                 # carat
 );

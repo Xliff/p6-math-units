@@ -85,9 +85,7 @@ class Math::Units {
   }
 
   multi method new(:$fac = 1, :$mag = 1, :$units) {
-    dd $fac;
-    dd $mag;
-    dd $units;
+    die "Cannot initialize without a <units> parameter" unless $units.defined;
 
     my ($umag, $unitParts) = $up.parseUnits($units);
     my @unitParts = @( $unitParts );
@@ -309,15 +307,12 @@ sub initialize {
   }
   say "Reductions";
 
-  # Check units table for validity.
+  # Add all unit identities to quick access structure.
+  dd %unitTable.keys;
   for %unitTable.kv -> $k, $v {
-      .isValid(:fatal(True)) for $v.unitParts;
-      die "Unit '{ $k }' was already defined during initialization!"
-        if %U{$k}.defined;
-      # Establish entry into quick access table if necessary.
       %U{$k} = Math::Units.new(:units($k));
   }
-  say "Validity";
+
 
   # Lastly!
   $check_defs = 1;
