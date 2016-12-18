@@ -131,13 +131,6 @@ class Math::Units::Parser {
     }
 
     proto token unit { * }
-    token unit:sym<s>   { <sym> }
-    token unit:sym<m>   { <sym> }
-    token unit:sym<g>   { <sym> }
-    token unit:sym<deg> { <sym> }
-    token unit:sym<A>   { <sym> }
-    token unit:sym<C>   { <sym> }
-    token unit:sym<Cd>  { <sym> }
   }
 
 
@@ -176,17 +169,18 @@ class Math::Units::Parser {
     for $m<num><expr> -> $ne {
       my $pow = $ne<pow>.defined ?? $ne<pow>.Str.Int !! 1;
       $unitParts.push: [ $ne<unit>.Str, $pow; ];
-      $mag *= Magnitude($ne<mag>.Str).Int if $ne<mag>.defined;
+      $mag *= Magnitude.enums{$ne<mag>.Str} if $ne<mag>.defined;
     }
     if $m<den>.defined {
       $unitParts.push: [
         $m<den><expr><unit>.Str,
         ($m<den><expr><pow>.defined ?? $m<den><expr><pow>.Str.Int !! 1) * -1
       ];
-      $mag /= Magnitude($m<den><expr><mag>).Int
+      $mag /= Magnitude.enms{$m<den><expr><mag>}
         if $<den><expr><mag>.defined;
     }
 
+    say "Final MAG: $mag";
     put "Final UP: ";
     dd $unitParts;
 

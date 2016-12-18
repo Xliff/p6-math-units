@@ -271,6 +271,13 @@ multi sub infix:</>(Math::Units $lhs, Int $rhs) {
 sub initialize {
   say "In init!";
   $up = Math::Units::Parser.new;
+  $up.addUnit('s');
+  $up.addUnit('m');
+  $up.addUnit('g');
+  $up.addUnit('deg');
+  $up.addUnit('A');
+  $up.addUnit('C');
+  $up.addUnit('Cd');
 
   %U<s>   = Math::Units.new( :units<s>   );
   %U<m>   = Math::Units.new( :units<m>   );
