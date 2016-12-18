@@ -48,14 +48,12 @@ class Math::Units {
     :$units,
     :@unitParts
   ) {
-      say "Math::Units::BUILD start\n";
       self.setValue($fac.Num * $mag.Num);
       $!units = $units;
 
       @!unitParts = |@unitParts;
 
       self.isValid if $check_defs;
-      say "Math::Units::BUILD end\n";;
   }
 
   method setValue(Num $val) {

@@ -2,7 +2,7 @@ use v6.c;
 
 use Math::Units::Defs;
 
-use Grammar::Tracer;
+#use Grammar::Tracer;
 
 # cw: Doing it this way allows us to save an eval.
 my @abbreviations = (
@@ -179,10 +179,6 @@ class Math::Units::Parser {
       $mag /= Magnitude.enms{$m<den><expr><mag>}
         if $<den><expr><mag>.defined;
     }
-
-    say "Final MAG: $mag";
-    put "Final UP: ";
-    dd $unitParts;
 
     $mag, $unitParts;
   }
