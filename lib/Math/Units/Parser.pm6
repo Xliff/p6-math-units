@@ -84,6 +84,10 @@ my @abbreviations = (
     -> $_ is copy { s[ liters? »         ] = 'l'     },
     -> $_ is copy { s[ meters? »         ] = 'm'     },
     -> $_ is copy { s[ miles? »          ] = 'mi'    },
+    # cw: m,in vs (min)utes? May cause issues. Test heavily!
+    # This is one of those situations where a "measure" method may help:
+    # resolve the conflict:
+    #   -  If length then m,in otherwise, time.
     -> $_ is copy { s[ minutes? »        ] = 'min'   },
     -> $_ is copy { s[ newtons? »        ] = 'N'     },
     -> $_ is copy { s[ ounces? »         ] = 'oz'    },
@@ -117,15 +121,17 @@ class Math::Units::Parser {
     regex den { <expr> }
 
     regex expr {
-      <mag>? <unit> [ '^' $<pow> = (\d+) ]?
+      <mag>? <unit> [ [ '^' || '**' ] $<pow> = (\d+) ]?
     }
 
     token mag {
-      T || G || M || k || h || da || d || c || m || u || µ || n || dn || p || f
+      [ T || G || M || k || h || da || d || c || m || u || µ || n || dn || p || f ]
+      ','?
     }
 
     proto token unit { * }
   }
+
 
   submethod BUILD {
     $!parser = UnitParserGrammar.new;

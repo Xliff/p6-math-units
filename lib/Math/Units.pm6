@@ -12,8 +12,14 @@ use Math::Units::Parser;
 #     This will get tricky though, since we have to build an initial table,
 #     first. This means that we need a method to load the initial tables
 #     before checking happens.
+#
+#  cw: These -could- be state variables, but why? Lexical scoping here is
+#      all we need, right?
 my $check_defs = 0;
 my $up;
+
+# cw: -YYY- Now that we have %U, what do we need this for?
+#     Should this hold unit identities?
 my %unitTable;
 
 #     Any instantiation of a Math::Units object
@@ -38,6 +44,8 @@ constant Cd  is export = Math::Units.new( :units<Cd>  );
 # Ex: 1 * %U<m/s> == Math::Units.new('1 m/s') == Math::Units.new(:units<m/s>)
 our %U is export := {};
 
+my %factors;
+
 my sub initialize {
   $up = Math::Units::Parser.new;
 
@@ -56,10 +64,13 @@ my sub initialize {
     %unitTable{$k.Str} = Math::Units.new($v);
   }
 
-  # Add reductions to the unit table
+  # Add reductions to the unit table.
+  # Add reduction and its inverse to factor conversion table.
   for %reductions.kv -> $k, $v {
       $up.addUnit: $k;
       %unitTable{$k} = Math::Units.new($v);
+      %factors{$k}{$v<units>} = ($v<fac> // 1) * ($v<mag> // 1);
+      %factors{$v<units>}{$k} = 1 / %factors{$k}{$v<units>};
   }
 
   # Check units table for validity.
@@ -68,7 +79,7 @@ my sub initialize {
       die "Unit '{ $k }' was already defined during initialization!"
         if %U{$k}.defined;
       # Establish entry into quick access table if necessary.
-      %U{$v.units} = Math::Units.new(:units($v.units));
+      %U{$k} = Math::Units.new(:units($k));
   }
 
   # Lastly!
@@ -191,6 +202,14 @@ class Math::Units {
     }
     @!unitParts = @up;
     # Update $.units
+    $!units = self!partsToString;
+  }
+
+  method pow(Num $pow) {
+    self.setValue($.value.pow($pow));
+    for @.unitParts -> $p {
+      $p[0] *= $pow;
+    }
     $!units = self!partsToString;
   }
 
