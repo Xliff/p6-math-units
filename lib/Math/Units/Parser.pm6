@@ -2,19 +2,18 @@ use v6.c;
 
 use Math::Units::Defs;
 
+use Grammar::Tracer;
+
 # cw: Doing it this way allows us to save an eval.
 my @abbreviations = (
     -> $_ is rw { s[ « per »        ] = '/'   },
-    #-> $_ is rw { s[ « sq[uare]?\s+ ] = 'sq,' },
-    -> $_ is rw { s[ « sq[uare]?+ ] = 'sq,' },
-
-    #-> $_ is rw { s[ « cu[bic]?\s+  ] = 'cu,' },
-    -> $_ is rw { s[ « cu[bic]?+  ] = 'cu,' },
+    -> $_ is rw { s[ « sq[uare]?\s+ ] = 'sq,' },
+    -> $_ is rw { s[ « cu[bic]?\s+  ] = 'cu,' },
     -> $_ is rw { s[ \s+squared »   ] = '^2'  },
     -> $_ is rw { s[ \s+cubed »     ] = '^3'  },
 
     -> $_ is rw { s[ « microns? »   ] = 'µ,m' },
-    -> $_ is rw { s[ « decinano\-   ] = 'dn,' },
+    -> $_ is rw { s[ « decinano\-?  ] = 'dn,' },
     -> $_ is rw { s[ « tera\-?      ] = 'T,'  },
     -> $_ is rw { s[ « giga\-?      ] = 'G,'  },
     -> $_ is rw { s[ « mega\-?      ] = 'M,'  },
@@ -107,8 +106,6 @@ my @abbreviations = (
     -> $_ is rw { s[ yards? »          ] = 'yd'    },
 );
 
-class Math::Units { ... }
-
 class Math::Units::Parser {
   has @.defUnits;
   has $.parser;
@@ -134,6 +131,13 @@ class Math::Units::Parser {
     }
 
     proto token unit { * }
+    token unit:sym<s>   { <sym> }
+    token unit:sym<m>   { <sym> }
+    token unit:sym<g>   { <sym> }
+    token unit:sym<deg> { <sym> }
+    token unit:sym<A>   { <sym> }
+    token unit:sym<C>   { <sym> }
+    token unit:sym<Cd>  { <sym> }
   }
 
 
@@ -151,17 +155,17 @@ class Math::Units::Parser {
     my $m = $.parser.parse($s);
     my ($mag, $unitParts) = self!handleUnitData($m<units>);
 
-    Math::Units.new(
-      :fac($m<fac>.Num),
-      :$mag,
-      :units($m<units>.Str),
-      :unitParts($unitParts.list)
+    (
+      fac   =>     $m<fac>.Num,
+      mag   =>     $mag,
+      units =>     $m<units>.Str,
+      unitParts => $unitParts.list
     );
   }
 
   method parseUnits(Str $u) {
     my $m = $.parser.subparse($u, :rule('units'));
-    die "Could not parse units" unless $m;
+    die "Could not parse units" unless $.defined && $m ~~ Match;
     self!handleUnitData($m)
   }
 
@@ -169,16 +173,20 @@ class Math::Units::Parser {
     my $mag;
     my $unitParts = [];
 
-    for $m<units><num><expr> -> $ne {
-      $unitParts.push: [ $_<unit>, $_<pow> ];
-      $mag *= Magnitude($ne<mag>).Int if $ne<mag>.defined;
+    for $m<num><expr> -> $ne {
+      my $pow = $ne<pow>.defined ?? $ne<pow>.Str.Int !! 1;
+      $unitParts.push: [ $ne<unit>.Str, $pow; ];
+      $mag *= Magnitude($ne<mag>.Str).Int if $ne<mag>.defined;
     }
     $unitParts.push: [
-      $m<units><den><expr><unit>,
-      $m<units><den><expr><pow>.Num * -1
+      $m<den><expr><unit>.Str,
+      ($m<den><expr><pow>.defined ?? $m<den><expr><pow>.Str.Int !! 1) * -1
     ];
-    $mag /= Magnitude($m<units><den><expr><mag>).Int
-      if $<units><den><expr><mag>.defined;
+
+    dd $unitParts;
+
+    $mag /= Magnitude($m<den><expr><mag>).Int
+      if $<den><expr><mag>.defined;
 
     $mag, $unitParts;
   }

@@ -17,27 +17,27 @@ enum Magnitude is export (
   'n'  => 1e-9,
   'dn' => 1e-10,
   'p'  => 1e-12,
-  'f'  => 1e-15
+  'f'  => 1e-15,
 );
 
-enum Units is export <
-  are l tonne N dyn Pa
-  bar barye kine  bole pond  glug
-  J W gee atm Hg  water
-  mach  coulomb V ohm siemens farad
-  Wb  henry tesla Hz  lbf tonf
-  duty  celo  jerk  slug  reyn  psi
-  tsi ouncedal  poundal tondal  hp  mil
-  s g m cycle deg rad
-  Cd  Kd  Fd  nauticalmile c
->;
+# enum Units is export <
+#   are l tonne N dyn Pa
+#   bar barye kine  bole pond  glug
+#   J W gee atm Hg  water
+#   mach  coulomb V ohm siemens farad
+#   Wb  henry tesla Hz  lbf tonf
+#   duty  celo  jerk  slug  reyn  psi
+#   tsi ouncedal  poundal tondal  hp  mil
+#   s g m cycle deg rad
+#   Cd  Kd  Fd  nauticalmile c
+# >;
 
 # cw: Note, in the interest of keeping things simple, we use grams (g) instead
 #     of kilograms (kg). Kiograms are supported, but they will always be
 #     represented as 1000 g, internally. This prevents possible conflicts
 #     with the unit parser.
 #
-our %formulas is export = (
+our @formulas is export = (
   are   => { :mag<h>,       :units<m/s> },
   l     => { :mag<m>,       :units<m^3> },
   tonne => { :mag<100000>,  :units<g> },
@@ -80,7 +80,7 @@ our %formulas is export = (
   gee          => { :fac(9.80665),   :units<m/s^2> },
   atm          => { :fac(101325),    :units<Pa> },
   Hg           => { :fac(13.5951),   :units<pond/cm^3> },
-  mach         => { :fac(331.46),    :units<m/s> }
+  mach         => { :fac(331.46),    :units<m/s> },
   hp           => { :fac(550),       :units<ft lbf/s> },
   nauticalmile => { :fac(1852),      :units<m> },
   c            => { :fac(300000000), :units<m/s>},
