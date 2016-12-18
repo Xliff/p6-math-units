@@ -274,14 +274,16 @@ sub initialize {
   $up.addUnit('A');
   $up.addUnit('C');
   $up.addUnit('Cd');
+  $up.addUnit('cycle');
 
-  %U<s>   = Math::Units.new( :units<s>   );
-  %U<m>   = Math::Units.new( :units<m>   );
-  %U<g>   = Math::Units.new( :units<g>   );
-  %U<deg> = Math::Units.new( :units<deg> );
-  %U<A>   = Math::Units.new( :units<A>   );
-  %U<C>   = Math::Units.new( :units<C>   );
-  %U<Cd>  = Math::Units.new( :units<Cd>  );
+  %U<s>     = Math::Units.new( :units<s>      );
+  %U<m>     = Math::Units.new( :units<m>      );
+  %U<g>     = Math::Units.new( :units<g>      );
+  %U<deg>   = Math::Units.new( :units<deg>    );
+  %U<A>     = Math::Units.new( :units<A>      );
+  %U<C>     = Math::Units.new( :units<C>      );
+  %U<Cd>    = Math::Units.new( :units<Cd>     );
+  %U<cycle> = Math::Units.new( :units<cycle>  );
 
   # Add formula definitions to unit table
   for @formulas -> $fp {
@@ -304,6 +306,14 @@ sub initialize {
       %factors{$r.value<units>}{$r.key} = 1 / %factors{$r.key}{$r.value<units>};
   }
   say "Reductions";
+
+  for @formulas2 -> $fp {
+    say "Adding unit { $fp.key }";
+
+    $up.addUnit: $fp.key;
+    %unitTable{$fp.key} = Math::Units.new(|%( $fp.value ));
+  }
+  say "Formulas2";
 
   # Add all unit identities to quick access structure.
   dd %unitTable.keys;

@@ -107,7 +107,7 @@ my @abbreviations = (
 );
 
 class Math::Units::Parser {
-  has @.defUnits;
+  has %.defUnits;
   has $.parser;
 
   grammar UnitParserGrammar {
@@ -139,9 +139,11 @@ class Math::Units::Parser {
   }
 
   method addUnit(Str $unit) {
-    @.defUnits.push: $unit;
-    $.parser.^add_multi_method("unit:sym<$unit>", my token { $unit });
+    return if %.defUnits{$unit}.defined;
+
+    $.parser.^add_multi_method("unit:sym<$unit>", my regex { $unit });
     $.parser.^compose;
+    %.defUnits{$unit} = 1
   }
 
   method parse($s) {

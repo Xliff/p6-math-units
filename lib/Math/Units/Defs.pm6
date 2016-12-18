@@ -70,24 +70,17 @@ our @formulas is export = (
   henry    => { :units<Wb/A> },
   tesla    => { :units<Wb/m^s> },
   Hz       => { :units<cycle/s> },
-  lbf      => { :units("lb gee") },
-  tonf     => { :units("ton gee") },
-  duty     => { :units("ft lbf") },
-  celo     => { :units<ft/s^2> },
-  jerk     => { :units<ft/s^3> },
+
   slug     => { :units("lbf s^2/ft") },
   ryn      => { :units("psi s") },
   psi      => { :units<lbf/in^2> },
-  tsi      => { :units<tonf/in^2> },
-  ouncedal => { :units("oz ft/s^2") },
+
   poundal  => { :units("lb ft/s^2") },
-  tondal   => { :units("ton ft/s^2") },
 
   gee          => { :fac(9.80665),   :units<m/s^2> },
   atm          => { :fac(101325),    :units<Pa> },
   Hg           => { :fac(13.5951),   :units("pond/cm^3") },
   mach         => { :fac(331.46),    :units<m/s> },
-  hp           => { :fac(550),       :units("ft lbf/s") },
   nauticalmile => { :fac(1852),      :units<m> },
   c            => { :fac(300000000), :units<m/s>},
 );
@@ -140,3 +133,17 @@ our @reductions is export = (
 
   'carat' => { :fac(0.2), :units<g> },                 # carat
 );
+
+# Formulas that we must put off due to dependencies
+our @formulas2 is export = (
+    tonf     => { :units("ton gee") },
+    lbf      => { :units("lb gee") },
+    duty     => { :units("ft lbf") },
+    celo     => { :units<ft/s^2> },
+    jerk     => { :units<ft/s^3> },
+    ouncedal => { :units("oz ft/s^2") },
+    tondal   => { :units("ton ft/s^2") },
+    tsi      => { :units<tonf/in^2> },
+
+    hp           => { :fac(550), :units("ft lbf/s") },
+)
