@@ -101,13 +101,13 @@ our @formulas is export = (
 # A .............. ampere (current)
 # C .............. degrees Celsius (temperature)
 
-our %reductions is export = (
+our @reductions is export = (
   'in'  => { :fac(0.0254), :units<m> },       # inches
   'pnt' => { :fac(1/72),   :units<in> },      # PostScript points
   'ft'  => { :fac(12),     :units<in> },      # feet
   'yd'  => { :fac(3),      :units<ft> },      # yards
   'mi'  => { :fac(5280),   :units<ft> },      # miles
-  'kip' => { :mag<k>,      :units<lbf> },     # kilo pounds
+  'kip' => { :mag(k),      :units<lbf> },     # kilo pounds
 
   'barrel' => { :fac(42),   :units<gal> },    # barrels
   'gal'    => { :fac(231),  :units<in^3> },   # gallons

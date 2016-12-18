@@ -289,20 +289,23 @@ sub initialize {
 
   # Add formula definitions to unit table
   for @formulas -> $fp {
-    $up.addUnit: $fp.key;
-
     say "Adding unit { $fp.key }";
+
+    $up.addUnit: $fp.key;
     %unitTable{$fp.key} = Math::Units.new(|%( $fp.value ));
   }
   say "Formulas";
 
   # Add reductions to the unit table.
   # Add reduction and its inverse to factor conversion table.
-  for %reductions.kv -> $k, $v {
-      $up.addUnit: $k;
-      %unitTable{$k} = Math::Units.new($v);
-      %factors{$k}{$v<units>} = ($v<fac> // 1) * ($v<mag> // 1);
-      %factors{$v<units>}{$k} = 1 / %factors{$k}{$v<units>};
+  for @reductions -> $r {
+      say "Adding unit { $r.key }";
+
+      $up.addUnit: $r.key;
+      %unitTable{$r.key} = Math::Units.new(|%( $r.value ));
+      %factors{$r.key}{$r.value<units>} =
+        ($r.value<fac> // 1) * ($r.value<mag> // 1);
+      %factors{$r.value<units>}{$r.key} = 1 / %factors{$r.key}{$r.value<units>};
   }
   say "Reductions";
 
