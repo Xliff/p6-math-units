@@ -3,6 +3,9 @@ use v6.c;
 use Math::Units::Defs;
 use Math::Units::Parser;
 
+# Set to 1 to emit debugging dsay:rmation.
+constant DEBUG = 0;
+
 # cw: The idea of specifying everything using the (yet-to-be-defined) class
 #     is so that the class can build up a state table of unit-to-unit or
 #     unit-to-formula mapping. Conversions would then be fairly straight
@@ -78,8 +81,7 @@ class Math::Units {
   #proto method new (|) {*}
 
   multi method new(Str $e) {
-    dd $e;
-    $up.parse($e);
+    self.bless(|%( $up.parse($e) ));
   }
 
   multi method new(:$fac = 1, :$mag = 1, :$units) {
@@ -264,8 +266,13 @@ multi sub infix:</>(Math::Units $lhs, Int $rhs) {
 #constant C   is export = Math::Units.new( :units<C>   );
 #constant Cd  is export = Math::Units.new( :units<Cd>  );
 
+sub dsay($s) {
+  return unless DEBUG;
+  say $s;
+}
+
 sub initialize {
-  say "In init!";
+  dsay("In init!");
   $up = Math::Units::Parser.new;
   $up.addUnit('s');
   $up.addUnit('m');
@@ -287,17 +294,17 @@ sub initialize {
 
   # Add formula definitions to unit table
   for @formulas -> $fp {
-    say "Adding unit { $fp.key }";
+    dsay("Adding unit { $fp.key }");
 
     $up.addUnit: $fp.key;
     %unitTable{$fp.key} = Math::Units.new(|%( $fp.value ));
   }
-  say "Formulas";
+  dsay("Formulas");
 
   # Add reductions to the unit table.
   # Add reduction and its inverse to factor conversion table.
   for @reductions -> $r {
-      say "Adding unit { $r.key }";
+      dsay("Adding unit { $r.key }");
 
       $up.addUnit: $r.key;
       %unitTable{$r.key} = Math::Units.new(|%( $r.value ));
@@ -305,22 +312,20 @@ sub initialize {
         ($r.value<fac> // 1) * ($r.value<mag> // 1);
       %factors{$r.value<units>}{$r.key} = 1 / %factors{$r.key}{$r.value<units>};
   }
-  say "Reductions";
+  dsay("Reductions");
 
   for @formulas2 -> $fp {
-    say "Adding unit { $fp.key }";
+    dsay("Adding unit { $fp.key }");
 
     $up.addUnit: $fp.key;
     %unitTable{$fp.key} = Math::Units.new(|%( $fp.value ));
   }
-  say "Formulas2";
+  dsay("Formulas2");
 
   # Add all unit identities to quick access structure.
-  dd %unitTable.keys;
   for %unitTable.kv -> $k, $v {
       %U{$k} = Math::Units.new(:units($k));
   }
-
 
   # Lastly!
   $check_defs = 1;
