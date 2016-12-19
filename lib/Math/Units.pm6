@@ -4,7 +4,7 @@ use Math::Units::Defs;
 use Math::Units::Parser;
 
 # Set to 1 to emit debugging dsay:rmation.
-constant DEBUG = 0;
+constant DEBUG = 1;
 
 # cw: The idea of specifying everything using the (yet-to-be-defined) class
 #     is so that the class can build up a state table of unit-to-unit or
@@ -107,16 +107,14 @@ class Math::Units {
     my @units = @.unitParts.clone.map({ $_[0] }).unique;
     my @newUnitParts;
     for @units -> $u {
-      my @su = @.unitParts.grep({ $_[0] eq $u }).map({ $_[1] });
-      my $s = @su.elems == 1 ?? @su[0][1] !! @su.sum;
-      @newUnitParts.push: ($s, $u) if $s;
+      my $s = @.unitParts.grep({ $_[0] eq $u }).map({ $_[1] }).sum;
+      @newUnitParts.push: ($u, $s) if $s;
     }
     @!unitParts = @newUnitParts;
     $!units = self!partsToString;
   }
 
   method isValid(:$fatal = False) {
-    dd @.unitParts;
     for @.unitParts -> $p {
       my $msg = "Can't find a definition for '{$p[0]}' in '{$.units}'";
       if $fatal {
@@ -133,14 +131,14 @@ class Math::Units {
   method !partsToString {
     my $num = @.unitParts
       .grep({ $_[1] > 0 })
-      .sort
-      .map({ $_[0] ~ $[1] > 1 ?? "^{ $_[1] }" !! ''})
+      .sort({ $^a[0] cmp $^b[0] })
+      .map({ $_[0] ~ ($_[1] > 1 ?? "^{ $_[1] }" !! '') })
       .join(' ');
 
     my $den = @.unitParts
       .grep({ $_[1] < 0})
-      .sort
-      .map({ $_[0] ~ $[1] < -1 ?? "^{ $_[1].Num.abs }" !! ''})
+      .sort({ $^a[0] cmp $^b[0] })
+      .map({ $_[0] ~ ($_[1] < -1 ?? "^{ $_[1].Num.abs }" !! '') })
       .join(' ');
 
     my $ret = $num;
@@ -180,28 +178,29 @@ class Math::Units {
 
 }
 
-multi sub infix:<+>(Math::Units $lhs, Math::Units $rhs) {
+multi sub infix:<+>(Math::Units $lhs, Math::Units $rhs) is export {
   # If units are equivalent, add values
   $lhs.reduce;
   $rhs.reduce;
   die "Attempt to perform a sum using different units: { $lhs.units } vs { $rhs.units }"
     unless $lhs.units eq $rhs.units;
-  Math::Units.new(:value($lhs.value - $rhs.value), :units($lhs.units));
+
+  Math::Units.new(:fac($lhs.value + $rhs.value), :units($lhs.units));
 }
 
-multi sub infix:<->(Math::Units $lhs, Math::Units $rhs) {
+multi sub infix:<->(Math::Units $lhs, Math::Units $rhs) is export {
   # If units are equivalent, subtract values
   $lhs.reduce;
   $rhs.reduce;
   die "Attempt to subtract using different units: { $lhs.units } vs { $rhs.units }"
     unless $lhs.units eq $rhs.units;
-  Math::Units.new(:value($lhs.value - $rhs.value), :units($lhs.units));
+  Math::Units.new(:fac($lhs.value - $rhs.value), :units($lhs.units));
 }
 
 
 # Multiplication and division between Numeric values and a Math::Unit is fairly
 # straight foward.
-multi sub infix:<*>(Num $lhs, Math::Units $rhs) {
+multi sub infix:<*>(Num $lhs, Math::Units $rhs) is export {
   Math::Units.new(
     :fac($rhs.value * $lhs),
     :units($rhs.units),
@@ -209,23 +208,23 @@ multi sub infix:<*>(Num $lhs, Math::Units $rhs) {
   )
 }
 
-multi sub infix:<*>(Math::Units $lhs, Num $rhs) {
+multi sub infix:<*>(Math::Units $lhs, Num $rhs) is export {
   $rhs * $lhs;
 }
 
-multi sub infix:<*>(Int $lhs, Math::Units $rhs) {
+multi sub infix:<*>(Int $lhs, Math::Units $rhs) is export {
   Math::Units.new(
     :fac($lhs * $rhs.value),
-    :units($lhs.units),
-    :unitParts($lhs.unitParts)
+    :units($rhs.units),
+    :unitParts($rhs.unitParts)
   )
 }
 
-multi sub infix:<*>(Math::Units $lhs, Int $rhs) {
+multi sub infix:<*>(Math::Units $lhs, Int $rhs) is export {
   $rhs * $lhs;
 }
 
-multi sub infix:</>(Num $lhs, Math::Units $rhs) {
+multi sub infix:</>(Num $lhs, Math::Units $rhs) is export {
   Math::Units.new(
     :fac($lhs / $rhs.value),
     :units($rhs.units),
@@ -233,7 +232,7 @@ multi sub infix:</>(Num $lhs, Math::Units $rhs) {
   )
 }
 
-multi sub infix:</>(Math::Units $lhs, Num $rhs) {
+multi sub infix:</>(Math::Units $lhs, Num $rhs) is export {
   Math::Units.new(
     :fac($lhs.value / $rhs),
     :units($lhs.units),
@@ -241,7 +240,7 @@ multi sub infix:</>(Math::Units $lhs, Num $rhs) {
   )
 }
 
-multi sub infix:</>(Int $lhs, Math::Units $rhs) {
+multi sub infix:</>(Int $lhs, Math::Units $rhs) is export {
   Math::Units.new(
     :fac($lhs / $rhs.value),
     :units($rhs.units),
@@ -249,7 +248,7 @@ multi sub infix:</>(Int $lhs, Math::Units $rhs) {
   )
 }
 
-multi sub infix:</>(Math::Units $lhs, Int $rhs) {
+multi sub infix:</>(Math::Units $lhs, Int $rhs) is export {
   Math::Units.new(
     :fac($lhs.value / $rhs),
     :units($lhs.units),
