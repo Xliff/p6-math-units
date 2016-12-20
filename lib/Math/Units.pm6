@@ -244,6 +244,17 @@ multi sub infix:<*>(Math::Units $lhs, Int $rhs) is export {
   $rhs * $lhs;
 }
 
+multi sub infix:</>(Math::Units $num, Math::Units $den) {
+  my @unitParts;
+  my @totalParts = |$num.unitParts, |$den.unitParts.map({ [ $_[0], $_[1] *-1 ] });
+  for @totalParts.clone.map({ $_[0] }).unique -> $u {
+    my $uPow = @totalParts.grep({ $_[0] eq $u }).map({ $_[1] }).sum;
+    @unitParts.push: ($u, $uPow);
+  }
+
+  Math::Units.new(:fac($num.value / $den.value), :@unitParts);
+}
+
 multi sub infix:</>(Num $lhs, Math::Units $rhs) is export {
   Math::Units.new(
     :fac($lhs / $rhs.value),
