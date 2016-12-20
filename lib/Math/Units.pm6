@@ -212,7 +212,7 @@ multi sub infix:<*>(Math::Units $lhs, Math::Units $rhs) is export {
   my @totalParts = |$lhs.unitParts, |$rhs.unitParts;
   for @totalParts.clone.map({ $_[0] }).unique -> $u {
     my $uPow = @totalParts.grep({ $_[0] eq $u }).map({ $_[1] }).sum;
-    @unitParts.push: ($u, $uPow);
+    @unitParts.push: ($u, $uPow) if $uPow;
   }
 
   Math::Units.new(:fac($lhs.value * $rhs.value), :@unitParts);
@@ -249,7 +249,7 @@ multi sub infix:</>(Math::Units $num, Math::Units $den) {
   my @totalParts = |$num.unitParts, |$den.unitParts.map({ [ $_[0], $_[1] *-1 ] });
   for @totalParts.clone.map({ $_[0] }).unique -> $u {
     my $uPow = @totalParts.grep({ $_[0] eq $u }).map({ $_[1] }).sum;
-    @unitParts.push: ($u, $uPow);
+    @unitParts.push: ($u, $uPow) if $uPow;
   }
 
   Math::Units.new(:fac($num.value / $den.value), :@unitParts);
