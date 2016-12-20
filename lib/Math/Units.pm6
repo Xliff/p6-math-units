@@ -51,11 +51,19 @@ class Math::Units {
     :$units,
     :@unitParts
   ) {
-      self.setValue($fac.Num * $mag.Num);
-      $!units = $units;
+      my ($umag, $parts);
+      if $units.defined {
+        $!units = $units;
+        ($umag, $parts) = $up.parseUnits($units);
+        @!unitParts = |@( $parts );
+      }
+      elsif @unitParts.defined {
+        # cw: Do a check on unitParts!
+        @!unitParts = @unitParts;
+        $!units = self!partsToString;
+      }
 
-      @!unitParts = |@unitParts;
-
+      self.setValue($fac.Num * $mag.Num * ($umag // 1));
       self.isValid if $check_defs;
   }
 
@@ -78,19 +86,8 @@ class Math::Units {
     %U{$u} = Math::Units.new(:unit($u));
   }
 
-  #proto method new (|) {*}
-
-  multi method new(Str $e) {
-    self.bless(|%( $up.parse($e) ));
-  }
-
-  multi method new(:$fac = 1, :$mag = 1, :$units) {
-    die "Cannot initialize without a <units> parameter" unless $units.defined;
-
-    my ($umag, $unitParts) = $up.parseUnits($units);
-    my @unitParts = @( $unitParts );
-
-    my $nmag = do given $mag {
+  method !handleMag($mag) {
+    given $mag {
       when Str {
         Magnitude.enums{$mag};
       }
@@ -99,7 +96,20 @@ class Math::Units {
         $mag;
       }
     }
-    self.bless(:$fac, :mag($nmag * $umag), :$units, :@unitParts);
+  }
+
+  multi method new(Str $e) {
+    self.bless(|%( $up.parse($e) ));
+  }
+
+  multi method new(:$fac = 1, :$mag = 1, :$units!) {
+    my $nmag = self!handleMag($mag);
+    self.bless(:$fac, :$mag, :$units);
+  }
+
+  multi method new(:$fac = 1, :$mag = 1, :@unitParts!) {
+    my $nmag = self!handleMag($mag);
+    self.bless(:$fac, :$mag, :@unitParts);
   }
 
   method reduce {
@@ -197,6 +207,16 @@ multi sub infix:<->(Math::Units $lhs, Math::Units $rhs) is export {
   Math::Units.new(:fac($lhs.value - $rhs.value), :units($lhs.units));
 }
 
+multi sub infix:<*>(Math::Units $lhs, Math::Units $rhs) is export {
+  my @unitParts;
+  my @totalParts = |$lhs.unitParts, |$rhs.unitParts;
+  for @totalParts.clone.map({ $_[0] }).unique -> $u {
+    my $uPow = @totalParts.grep({ $_[0] eq $u }).map({ $_[1] }).sum;
+    @unitParts.push: ($u, $uPow);
+  }
+
+  Math::Units.new(:fac($lhs.value * $rhs.value), :@unitParts);
+}
 
 # Multiplication and division between Numeric values and a Math::Unit is fairly
 # straight foward.
