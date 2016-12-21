@@ -24,6 +24,7 @@ my $up;
 # cw: -YYY- Now that we have %U, what do we need this for?
 #     Should this hold unit identities?
 my %unitTable;
+my %convTable;
 
 #     Any instantiation of a Math::Units object
 #     after module initialization will have checking *forced*.
@@ -33,7 +34,7 @@ INIT { initialize(); }
 # Quick access unit table. Contains all defined units for quick conversion
 # from literal to Math::Units objects.
 #
-# Ex: 1 * %U<m/s> == Math::Units.new('1 m/s') == Math::Units.new(:units<m/s>)
+# Ex: %U<m/s> == 1 * %U<m/s> == Math::Units.new('1 m/s') == Math::Units.new(:units<m/s>)
 our %U is export;
 
 my %factors;
@@ -58,7 +59,6 @@ class Math::Units {
         @!unitParts = |@( $parts );
       }
       elsif @unitParts.defined {
-        # cw: Do a check on unitParts!
         @!unitParts = @unitParts;
         $!units = self!partsToString;
       }
@@ -113,7 +113,7 @@ class Math::Units {
   }
 
   method reduce {
-    # Reduce unitParts to its most simple form.
+    # Reduce unitParts to its simplest form.
     my @units = @.unitParts.clone.map({ $_[0] }).unique;
     my @newUnitParts;
     for @units -> $u {
@@ -124,7 +124,7 @@ class Math::Units {
     $!units = self!partsToString;
   }
 
-  method isValid(:$fatal = False) {
+  method isValid(:$fatal = True) {
     for @.unitParts -> $p {
       my $msg = "Can't find a definition for '{$p[0]}' in '{$.units}'";
       if $fatal {
@@ -302,7 +302,7 @@ sub dsay($s) {
 }
 
 sub initialize {
-  dsay("In init!");
+  dsay("==== INIT ====");
   $up = Math::Units::Parser.new;
   $up.addUnit('s');
   $up.addUnit('m');
@@ -329,7 +329,6 @@ sub initialize {
     $up.addUnit: $fp.key;
     %unitTable{$fp.key} = Math::Units.new(|%( $fp.value ));
   }
-  dsay("Formulas");
 
   # Add reductions to the unit table.
   # Add reduction and its inverse to factor conversion table.
@@ -342,7 +341,6 @@ sub initialize {
         ($r.value<fac> // 1) * ($r.value<mag> // 1);
       %factors{$r.value<units>}{$r.key} = 1 / %factors{$r.key}{$r.value<units>};
   }
-  dsay("Reductions");
 
   for @formulas2 -> $fp {
     dsay("Adding unit { $fp.key }");
@@ -350,11 +348,22 @@ sub initialize {
     $up.addUnit: $fp.key;
     %unitTable{$fp.key} = Math::Units.new(|%( $fp.value ));
   }
-  dsay("Formulas2");
 
   # Add all unit identities to quick access structure.
   for %unitTable.kv -> $k, $v {
       %U{$k} = Math::Units.new(:units($k));
+  }
+
+  # Build %convTable from %conversion factors in Math::Units::Defs
+  for %conversion_factors.kv -> $k, $v {
+    my ($from, $to) = do {
+      $k ~~ /^ (<-[ , ]> +) ',' (.+) $/;
+      $0, $1;
+    }
+    die "Problem parsing conversion key '$k'"
+      unless $from.defined && $to.defined;
+    %convTable{$from}{$to} = $v;
+    dsay("Adding an entry for '$from' to '$to' to conversions table.");
   }
 
   # Lastly!

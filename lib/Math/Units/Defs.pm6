@@ -145,5 +145,52 @@ our @formulas2 is export = (
     tondal   => { :units("ton ft/s^2") },
     tsi      => { :units<tonf/in^2> },
 
-    hp           => { :fac(550), :units("ft lbf/s") },
-)
+    hp       => { :fac(550), :units("ft lbf/s") },
+);
+
+# Will be broken into a more useable form in initialize().
+our %conversion_factors is export = (
+  'in,m'   => 0.0254,
+  'in,pnt' => 72,
+  'ft,in'  => 12,
+  'yd,ft'  => 3,
+  'mi,ft'  => 5280,
+
+  'barrel,gal' => 42,
+  'gal,in^3'   => 231,
+  'gal,qt'     => 4,
+  'qt,pt'      => 2,
+  'pt,floz'    => 16,
+  'pt,gill'    => 4,
+
+  'C,F' => sub ($_ is copy) { $_ * 1.8 + 32 },
+  'F,C' => sub ($_ is copy) { ( $_ - 32 ) / 1.8 },
+  'K,C' => sub ($_ is copy) { $_ - 273.15 },
+  'C,K' => sub ($_ is copy) { $_ + 273.15 },
+
+  'Cd,Fd' => 1.8,
+  'Kd,Cd' => 1,
+
+  'wk,day' => 7,
+  'day,hr' => 24,
+  'hr,min' => 60,
+  'min,s'  => 60,
+
+  'dollar,cent' => 100,
+
+  'lb,g'   => 453.59237,
+  'lb,oz'  => 16,
+  'lb,gr'  => 7000,
+  'oz,dr'  => 16,
+  'ton,lb' => 2000,
+
+  'cycle,deg' => 360,
+  'rad,deg'   => 180 / 3.14159265358979323846,
+  'grad,deg'  => 9 / 10,
+
+  'troypound,gr'          => 5760,
+  'troypound,troyounce'   => 12,
+  'troyounce,pennyweight' => 20,
+
+  'carat,gm' => .2
+);
