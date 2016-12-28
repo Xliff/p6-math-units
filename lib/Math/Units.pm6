@@ -1,10 +1,8 @@
 use v6.c;
 
 use Math::Units::Defs;
+use Math::Units::Convert;
 use Math::Units::Parser;
-
-# Set to 1 to emit debugging dsay:rmation.
-constant DEBUG = 1;
 
 # cw: The idea of specifying everything using the (yet-to-be-defined) class
 #     is so that the class can build up a state table of unit-to-unit or
@@ -21,11 +19,6 @@ constant DEBUG = 1;
 my $check_defs = 0;
 my $up;
 
-# cw: -YYY- Now that we have %U, what do we need this for?
-#     Should this hold unit identities?
-my %unitTable;
-my %convTable;
-
 #     Any instantiation of a Math::Units object
 #     after module initialization will have checking *forced*.
 #     So we then set $check_defs to a non-zero value when that is done.
@@ -36,8 +29,6 @@ INIT { initialize(); }
 #
 # Ex: %U<m/s> == 1 * %U<m/s> == Math::Units.new('1 m/s') == Math::Units.new(:units<m/s>)
 our %U is export;
-
-my %factors;
 
 class Math::Units {
   has $.fac;
@@ -186,6 +177,20 @@ class Math::Units {
     $!units = self!partsToString;
   }
 
+  # cw: This entire train needs more thought. For example, could we make
+  #     Math::Units::Convert independent of Math::Units, somehow?
+  #
+  #     Maybe move the Math::Units::Defs part to Math::Units::Convert
+  #     and make Math::Units only dependent on Math::Units::Convert?
+  #
+  #     that might work.
+  #
+  # If there is a Math::Units::Convert, then this routine should reference
+  # it.
+  method convert($newUnit) {
+    convertUnits($.value, $.units, $newUnit);
+  }
+
 }
 
 multi sub infix:<+>(Math::Units $lhs, Math::Units $rhs) is export {
@@ -296,13 +301,8 @@ multi sub infix:</>(Math::Units $lhs, Int $rhs) is export {
 #constant C   is export = Math::Units.new( :units<C>   );
 #constant Cd  is export = Math::Units.new( :units<Cd>  );
 
-sub dsay($s) {
-  return unless DEBUG;
-  say $s;
-}
-
 sub initialize {
-  dsay("==== INIT ====");
+  dsay("==== Math::Units INIT ====");
   $up = Math::Units::Parser.new;
   $up.addUnit('s');
   $up.addUnit('m');
@@ -337,9 +337,6 @@ sub initialize {
 
       $up.addUnit: $r.key;
       %unitTable{$r.key} = Math::Units.new(|%( $r.value ));
-      %factors{$r.key}{$r.value<units>} =
-        ($r.value<fac> // 1) * ($r.value<mag> // 1);
-      %factors{$r.value<units>}{$r.key} = 1 / %factors{$r.key}{$r.value<units>};
   }
 
   for @formulas2 -> $fp {
@@ -354,18 +351,8 @@ sub initialize {
       %U{$k} = Math::Units.new(:units($k));
   }
 
-  # Build %convTable from %conversion factors in Math::Units::Defs
-  for %conversion_factors.kv -> $k, $v {
-    my ($from, $to) = do {
-      $k ~~ /^ (<-[ , ]> +) ',' (.+) $/;
-      $0, $1;
-    }
-    die "Problem parsing conversion key '$k'"
-      unless $from.defined && $to.defined;
-    %convTable{$from}{$to} = $v;
-    dsay("Adding an entry for '$from' to '$to' to conversions table.");
-  }
-
   # Lastly!
   $check_defs = 1;
+
+  dsay("==== Math::Units ENDINIT ====");
 }
