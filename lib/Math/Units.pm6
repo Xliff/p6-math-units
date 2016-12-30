@@ -17,7 +17,6 @@ use Math::Units::Parser;
 #  cw: These -could- be state variables, but why? Lexical scoping here is
 #      all we need, right?
 my $check_defs = 0;
-my $up;
 
 #     Any instantiation of a Math::Units object
 #     after module initialization will have checking *forced*.
@@ -303,7 +302,7 @@ multi sub infix:</>(Math::Units $lhs, Int $rhs) is export {
 
 sub initialize {
   dsay("==== Math::Units INIT ====");
-  $up = Math::Units::Parser.new;
+  #$up = Math::Units::Parser.new;
   $up.addUnit('s');
   $up.addUnit('m');
   $up.addUnit('g');

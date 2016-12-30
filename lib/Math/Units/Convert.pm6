@@ -1,6 +1,7 @@
 use v6.c;
 
 use Math::Units::Defs;
+use Math::Units::Parser;
 
 unit module Math::Units::Convert;
 
@@ -16,6 +17,7 @@ my %convTable;
 #     closer to the base units, although that is not required).
 our %unitTable is export;
 our %factors is export;
+our $up is export;
 
 INIT { initialize(); }
 
@@ -26,6 +28,8 @@ sub dsay($s) is export {
 
 sub initialize {
   dsay("==== Math::Units::Convert INIT ====");
+
+  my $up = Math::Units::Parser.new;
 
   for @reductions -> $r {
       dsay("[Convert] Adding reduction { $r.key }");
@@ -52,7 +56,18 @@ sub initialize {
   dsay("==== Math::Units::Convert ENDINIT ====");
 }
 
+sub canonicalize_unit_name($u) {
+  for @abbreviations -> $a {
+    # We shouldn't need REDO since replacements are global.
+    &( $a )($u);
+  }
+  $up.parseUnits($u);
+}
 
 sub convertUnits($value, $fromU, $toU) is export {
+  # Apply cannonization rules, and parse into unitParts
+  my($fMag, $fParts) = canonicalize_unit_name($fromU);
+  my($tMag, $tParts) = canonicalize_unit_name($toU);
 
+  # Do tree search to see if fromU parts can be converted to toU parts.
 }
